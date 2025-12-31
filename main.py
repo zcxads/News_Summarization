@@ -5,32 +5,28 @@ from fastapi.responses import FileResponse
 import uvicorn
 import os
 from datetime import datetime
-from apscheduler.schedulers.background import BackgroundScheduler
-from database import get_db, init_db
-from crawler import crawl_all
-from summarizer import summarize_all_pending
 import asyncio
-
 from contextlib import asynccontextmanager
+
+# Import from backend package
+from backend.database import init_db, get_today_summarized_news, get_latest_summarized_news
+from backend.tasks import setup_scheduler, start_background_tasks
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     print("Lifespan context starting...")
     init_db()
-    print("Database initialized.")
-    # Start scheduler
-    scheduler = BackgroundScheduler()
-    scheduler.add_job(scheduled_job, 'interval', hours=2)
-    scheduler.start()
-    print("Scheduler started.")
     
-    print("Starting initial background task...")
-    asyncio.create_task(run_initial_work())
-    print("Lifespan setup complete, yielding.")
+    # Setup and start scheduler
+    scheduler = setup_scheduler()
+    
+    # Run initial work in background
+    asyncio.create_task(start_background_tasks())
+    
     yield
+    
     print("Shutting down scheduler...")
     scheduler.shutdown()
-    print("Scheduler shut down.")
 
 app = FastAPI(lifespan=lifespan)
 
@@ -43,50 +39,40 @@ app.add_middleware(
 )
 
 # Serve static files from the React build directory
-# Note: In production, the "dist" directory will contain the built assets.
-if os.path.exists("dist"):
-    app.mount("/assets", StaticFiles(directory="dist/assets"), name="assets")
+# main.py is now at root.
+dist_path = os.path.join(os.getcwd(), "frontend", "dist")
+
+if os.path.exists(dist_path):
+    print(f"Serving static files from: {dist_path}")
+    app.mount("/assets", StaticFiles(directory=os.path.join(dist_path, "assets")), name="assets")
 
 @app.get("/")
 async def read_index():
-    if os.path.exists("dist/index.html"):
-        return FileResponse("dist/index.html")
-    return {"message": "Frontend not built yet. Run 'npm run build'."}
+    index_path = os.path.join(dist_path, "index.html")
+    if os.path.exists(index_path):
+        return FileResponse(index_path)
+    return {"message": "Frontend not built yet. Run 'npm run build' in frontend directory."}
 
-# Catch-all route for SPA navigation (optional but good practice)
 @app.exception_handler(404)
 async def custom_404_handler(request: Request, exc):
     if not request.url.path.startswith("/api"):
-        if os.path.exists("dist/index.html"):
-            return FileResponse("dist/index.html")
+        index_path = os.path.join(dist_path, "index.html")
+        if os.path.exists(index_path):
+            return FileResponse(index_path)
     return {"detail": "Not Found"}
-
-async def run_initial_work():
-    print("Running initial crawl and summary...")
-    crawl_all()
-    summarize_all_pending()
-
-def scheduled_job():
-    print("Running scheduled crawl and summary...")
-    crawl_all()
-    summarize_all_pending()
 
 @app.get("/api/news")
 def get_news():
     today = datetime.now().strftime("%Y.%m.%d")
-    conn = get_db()
-    cursor = conn.cursor()
     
     # Try to get today's news
-    cursor.execute("SELECT * FROM articles WHERE published_at LIKE ? AND summary IS NOT NULL ORDER BY published_at DESC", (f"{today}%",))
-    news = [dict(row) for row in cursor.fetchall()]
+    news = get_today_summarized_news(today)
     
-    # If no news today, get the most recent from yesterday or before
+    # If no news for today, fallback to latest available news
     if not news:
-        cursor.execute("SELECT * FROM articles WHERE summary IS NOT NULL ORDER BY published_at DESC")
-        news = [dict(row) for row in cursor.fetchall()]
+        print("No news for today, fetching latest available news...")
+        news = get_latest_summarized_news()
     
-    conn.close()
     return news
 
 if __name__ == "__main__":
