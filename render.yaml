@@ -8,4 +8,4 @@ services:
         sync: false # User will need to set this in Render UI
       - key: PYTHONUNBUFFERED
         value: "true"
-    healthCheckPath: /api/news
+    healthCheckPath: /health

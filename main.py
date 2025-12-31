@@ -38,20 +38,36 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Serve static files from the React build directory
-# main.py is now at root.
-dist_path = os.path.join(os.getcwd(), "frontend", "dist")
+# Determine base paths
+base_dir = os.path.dirname(os.path.abspath(__file__))
+dist_path = os.path.join(base_dir, "frontend", "dist")
+
+print(f"Current Working Directory: {os.getcwd()}")
+print(f"Base Directory: {base_dir}")
+print(f"Checking for dist folder at: {dist_path}")
 
 if os.path.exists(dist_path):
     print(f"Serving static files from: {dist_path}")
     app.mount("/assets", StaticFiles(directory=os.path.join(dist_path, "assets")), name="assets")
+else:
+    print(f"WARNING: Frontend dist folder not found at {dist_path}")
 
 @app.get("/")
 async def read_index():
     index_path = os.path.join(dist_path, "index.html")
     if os.path.exists(index_path):
         return FileResponse(index_path)
-    return {"message": "Frontend not built yet. Run 'npm run build' in frontend directory."}
+    return {
+        "status": "online",
+        "message": "Backend is running, but frontend dist/index.html was not found.",
+        "dist_path": dist_path,
+        "exists": os.path.exists(dist_path),
+        "files_in_frontend": os.listdir(os.path.join(base_dir, "frontend")) if os.path.exists(os.path.join(base_dir, "frontend")) else "frontend dir missing"
+    }
+
+@app.get("/health")
+def health_check():
+    return {"status": "ok", "time": str(datetime.now())}
 
 @app.exception_handler(404)
 async def custom_404_handler(request: Request, exc):
@@ -59,7 +75,7 @@ async def custom_404_handler(request: Request, exc):
         index_path = os.path.join(dist_path, "index.html")
         if os.path.exists(index_path):
             return FileResponse(index_path)
-    return {"detail": "Not Found"}
+    return {"detail": f"Path {request.url.path} Not Found"}
 
 @app.get("/api/news")
 def get_news():
