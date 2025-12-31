@@ -25,7 +25,7 @@ def summarize_article(article_id, title, content):
 
         conn = get_db()
         cursor = conn.cursor()
-        cursor.execute("UPDATE articles SET summary = ? WHERE id = ?", (summary, article_id))
+        cursor.execute("UPDATE articles SET summary = %s WHERE id = %s", (summary, article_id))
         conn.commit()
         conn.close()
         

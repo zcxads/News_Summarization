@@ -1,4 +1,17 @@
 services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: news-db
+    environment:
+      POSTGRES_USER: news_user
+      POSTGRES_PASSWORD: news_password
+      POSTGRES_DB: news_summarization
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: always
+
   news-summarizer:
     build: .
     image: news-summarization
@@ -7,6 +20,11 @@ services:
       - "8000:8000"
     env_file:
       - .env
-    volumes:
-      - ./backend:/app/backend
+    environment:
+      DATABASE_URL: postgresql://news_user:news_password@postgres:5432/news_summarization
+    depends_on:
+      - postgres
     restart: always
+
+volumes:
+  postgres_data:
