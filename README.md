@@ -25,11 +25,10 @@ news_summarization/
 ├── backend/                # 백엔드 핵심 로직 (Python Package)
 │   ├── crawler.py          # 뉴스 크롤러 로직
 │   ├── summarizer.py       # Gemini API 활용 요약 엔진
-│   ├── database.py         # SQLite DB 인터페이스
+│   ├── database.py         # PostgreSQL DB 인터페이스
 │   ├── tasks.py            # 백그라운드 스케줄러 및 작업
 │   ├── check_db.py         # DB 상태 확인 도구
-│   ├── __init__.py         # 패키지 초기화 파일
-│   └── news.db             # 로컬 SQLite 데이터베이스
+│   └── __init__.py         # 패키지 초기화 파일
 ├── frontend/               # 프론트엔드 (React + Vite)
 │   ├── src/                # 소스 코드
 │   ├── index.html          # HTML 엔트리
@@ -38,7 +37,7 @@ news_summarization/
 ├── main.py                 # 서비스 통합 및 API 진입점 (Root)
 ├── requirements.txt        # 전체 백엔드 의존성 (Root)
 ├── Dockerfile              # 컨테이너화 설정
-├── render.yaml             # Render.com 배포 설정
+├── render.yaml             # Render.com 배포 설정 (PostgreSQL 포함)
 └── README.md               # 프로젝트 문서 (현재 파일)
 ```
 
@@ -48,11 +47,13 @@ news_summarization/
 - Python 3.10+
 - Node.js 20+
 - Google Gemini API Key
+- PostgreSQL (로컬 개발 시)
 
 ### 환경 설정
 `.env` 파일을 root 폴더에 생성하세요.
 ```env
 GEMINI_API_KEY=your_api_key_here
+DATABASE_URL=postgresql://user:password@localhost:5432/news_db
 ```
 
 ### 서버 실행 (Backend)

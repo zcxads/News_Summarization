@@ -1,18 +1,10 @@
-import sqlite3
 import os
 from prettytable import PrettyTable
 from database import get_db
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "news.db")
-
 def check_db():
-    if not os.path.exists(DB_PATH):
-        print(f"Error: Database file not found at {DB_PATH}")
-        return
-
     try:
         conn = get_db()
-        conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
         
         # Summary statistics
