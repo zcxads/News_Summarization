@@ -34,4 +34,5 @@ RUN mkdir -p backend/data
 EXPOSE 8000
 
 # Run the application from root
-CMD ["gunicorn", "main:app", "-w", "4", "-k", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000"]
+# Use single worker for free tier memory constraints
+CMD ["gunicorn", "main:app", "-w", "1", "-k", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000", "--timeout", "120"]
