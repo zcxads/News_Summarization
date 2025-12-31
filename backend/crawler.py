@@ -3,7 +3,7 @@ import requests
 from bs4 import BeautifulSoup
 import sqlite3
 import re
-from database import get_db, clear_db
+from .database import get_db, clear_db
 
 SITEC_CONFIG = {
     "aitimes.kr": {
@@ -34,6 +34,7 @@ HEADERS = {
 
 def parse_date(date_str, domain):
     try:
+        # Expected format: YYYY-MM-DD
         if domain == "aitimes.kr":
             # 2025.12.30 17:37
             match = re.search(r"(\d{4})\.(\d{2})\.(\d{2})", date_str)
@@ -49,7 +50,35 @@ def parse_date(date_str, domain):
         print(f"Error parsing date {date_str}: {e}")
     return None
 
-def crawl_article(url, source, config):
+def normalize_date(date_str):
+    """Normalize various date formats to YYYY.MM.DD HH:MM"""
+    if not date_str:
+        return datetime.now().strftime("%Y.%m.%d %H:%M")
+    
+    # Already YYYY.MM.DD HH:MM?
+    if re.match(r"\d{4}\.\d{2}\.\d{2}\s\d{2}:\d{2}", date_str):
+        return date_str
+    
+    # 2025.12.30 (without time)
+    match = re.search(r"(\d{4})\.(\d{2})\.(\d{2})", date_str)
+    if match and ":" not in date_str:
+        return f"{match.group(1)}.{match.group(2)}.{match.group(3)} 00:00"
+
+    # 12-31 12:17 (AITimes format)
+    match = re.search(r"(\d{2})-(\d{2})\s(\d{2}:\d{2})", date_str)
+    if match:
+        year = datetime.now().year
+        return f"{year}.{match.group(1)}.{match.group(2)} {match.group(3)}"
+    
+    # 12-31 (AITimes format without time)
+    match = re.search(r"(\d{2})-(\d{2})", date_str)
+    if match and ":" not in date_str:
+        year = datetime.now().year
+        return f"{year}.{match.group(1)}.{match.group(2)} 00:00"
+        
+    return date_str
+
+def crawl_article(url, source, config, list_date=None):
     try:
         response = requests.get(url, headers=HEADERS, timeout=10)
         response.raise_for_status()
@@ -82,6 +111,13 @@ def crawl_article(url, source, config):
             if date_str:
                 break
         
+        if not date_str and list_date:
+            # Use date from list page if extraction from detail page fails
+            date_str = list_date
+
+        # Normalize date format for DB consistency
+        normalized_date = normalize_date(date_str)
+
         body_el = soup.select_one(config["body_selector"])
         content = body_el.get_text("\n", strip=True) if body_el else ""
 
@@ -94,10 +130,10 @@ def crawl_article(url, source, config):
         cursor.execute("""
             INSERT OR REPLACE INTO articles (source, title, content, url, published_at)
             VALUES (?, ?, ?, ?, ?)
-        """, (source, title, content, url, date_str))
+        """, (source, title, content, url, normalized_date))
         conn.commit()
         conn.close()
-        print(f"Saved: {title} ({date_str})")
+        print(f"Saved: {title} ({normalized_date})")
 
     except Exception as e:
         print(f"Error crawling article {url}: {e}")
@@ -132,9 +168,9 @@ def crawl_all():
                     print(f"[{domain}] Raw date: {raw_date}, Parsed: {parsed_date}")
                     
                     if parsed_date == today_str:
-                        today_articles.append(full_url)
+                        today_articles.append((full_url, raw_date))
                     elif parsed_date == yesterday_str:
-                        yesterday_articles.append(full_url)
+                        yesterday_articles.append((full_url, raw_date))
             
             # Select target date
             if today_articles:
@@ -151,14 +187,14 @@ def crawl_all():
             conn = get_db()
             cursor = conn.cursor()
             
-            for url in targets:
+            for url, raw_date in targets:
                 cursor.execute("SELECT 1 FROM articles WHERE url = ?", (url,))
                 if cursor.fetchone():
                     print(f"Skipping (Already exists): {url}")
                     continue
                 
                 # Fetch and save new article
-                crawl_article(url, domain, config)
+                crawl_article(url, domain, config, list_date=raw_date)
             
             conn.close()
                 
