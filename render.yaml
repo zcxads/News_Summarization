@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: news-summarization
+    runtime: docker
+    plan: free
+    envVars:
+      - key: GEMINI_API_KEY
+        sync: false # User will need to set this in Render UI
+      - key: PYTHONUNBUFFERED
+        value: "true"
+    healthCheckPath: /api/news
