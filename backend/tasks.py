@@ -28,6 +28,6 @@ def setup_scheduler():
     return scheduler
 
 async def start_background_tasks():
-    print("Starting initial background task in 5 seconds...")
-    await asyncio.sleep(5) # Brief delay to let web server start
+    print("Starting initial background task in 60 seconds...")
+    await asyncio.sleep(60)  # Wait 1 minute for server to fully start
     run_initial_work()

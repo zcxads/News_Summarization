@@ -20,9 +20,8 @@ async def lifespan(app: FastAPI):
     # Setup and start scheduler
     scheduler = setup_scheduler()
     
-    # Note: Initial crawl is disabled to avoid worker timeout on Render free tier
-    # The scheduler will run the first crawl within 2 hours
-    # asyncio.create_task(start_background_tasks())
+    # Run initial work after 1 minute to allow server to start first
+    asyncio.create_task(start_background_tasks())
     
     yield
     
