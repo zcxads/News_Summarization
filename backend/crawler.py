@@ -128,8 +128,12 @@ def crawl_article(url, source, config, list_date=None):
         conn = get_db()
         cursor = conn.cursor()
         cursor.execute("""
-            INSERT OR REPLACE INTO articles (source, title, content, url, published_at)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO articles (source, title, content, url, published_at)
+            VALUES (%s, %s, %s, %s, %s)
+            ON CONFLICT (url) DO UPDATE SET
+                title = EXCLUDED.title,
+                content = EXCLUDED.content,
+                published_at = EXCLUDED.published_at
         """, (source, title, content, url, normalized_date))
         conn.commit()
         conn.close()
@@ -188,7 +192,7 @@ def crawl_all():
             cursor = conn.cursor()
             
             for url, raw_date in targets:
-                cursor.execute("SELECT 1 FROM articles WHERE url = ?", (url,))
+                cursor.execute("SELECT 1 FROM articles WHERE url = %s", (url,))
                 if cursor.fetchone():
                     print(f"Skipping (Already exists): {url}")
                     continue

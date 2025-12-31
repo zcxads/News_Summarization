@@ -12,23 +12,7 @@ from contextlib import asynccontextmanager
 from backend.database import init_db, get_today_summarized_news, get_latest_summarized_news
 from backend.tasks import setup_scheduler, start_background_tasks
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    print("Lifespan context starting...")
-    init_db()
-    
-    # Setup and start scheduler
-    scheduler = setup_scheduler()
-    
-    # Run initial work after 1 minute to allow server to start first
-    asyncio.create_task(start_background_tasks())
-    
-    yield
-    
-    print("Shutting down scheduler...")
-    scheduler.shutdown()
-
-app = FastAPI(lifespan=lifespan)
+app = FastAPI()
 
 # Enable CORS for React frontend
 app.add_middleware(
@@ -37,6 +21,29 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Global scheduler reference
+scheduler = None
+
+@app.on_event("startup")
+async def startup_event():
+    global scheduler
+    print("Application startup event triggered")
+    init_db()
+    
+    # Setup scheduler
+    scheduler = setup_scheduler()
+    
+    # Start background task
+    print("Starting background task...")
+    asyncio.create_task(start_background_tasks())
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    global scheduler
+    if scheduler:
+        print("Shutting down scheduler...")
+        scheduler.shutdown()
 
 # Determine base paths
 base_dir = os.path.dirname(os.path.abspath(__file__))
