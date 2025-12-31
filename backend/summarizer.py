@@ -1,7 +1,7 @@
 import google.generativeai as genai
 import os
 from dotenv import load_dotenv
-from database import get_db
+from .database import get_db
 
 load_dotenv()
 
@@ -9,7 +9,7 @@ genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
 def summarize_article(article_id, title, content):
     try:
-        model = genai.GenerativeModel("models/gemini-3-flash-preview")
+        model = genai.GenerativeModel("gemini-2.5-flash-lite")
         prompt = f"""
         다음 인공지능 관련 뉴스 기사를 한국어로 요약해줘.
         - 형식: 한 문장의 제목 + 3개 이내의 핵심 불렛포인트

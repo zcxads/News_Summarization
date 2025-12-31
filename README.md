@@ -1,48 +1,91 @@
-# AI Daily News Summary
+# AI Daily News Summarizer
 
-인공지능(AI) 관련 최신 뉴스를 자동으로 수집하고, Google Gemini LLM을 사용하여 핵심 내용을 요약해 주는 서비스입니다.
+인공지능 소식을 매일 자동으로 수집하고, Gemini LLM을 통해 요약하여 제공하는 풀스택 웹 애플리케이션입니다.
 
-## 주요 기능
-- **뉴스 크롤링**: 국내외 주요 AI 뉴스 사이트에서 최신 기사를 자동으로 수집합니다.
-- **AI 요약**: Gemini 3 Flash 모델을 활용하여 기사 내용을 전문적이고 간결하게 한글로 요약합니다.
-- **스케줄링**: 2시간 간격으로 새로운 뉴스를 체크하고 요약본을 업데이트합니다.
-- **반응형 웹 UI**: 모던하고 세련된 다크 모드 기반의 인터페이스를 제공합니다.
+## 1. 문제 정의 (Problem Definition)
 
-## 기술 스택
-### Backend
-- **Python / FastAPI**: 빠르고 현대적인 고성능 웹 프레임워크
-- **SQLite**: 가벼운 로컬 데이터베이스
-- **Google Generative AI (Gemini)**: 뉴스 요약을 위한 LLM
-- **BeautifulSoup4**: 웹 크롤링
-- **APScheduler**: 백그라운드 작업 스캐줄링
+수많은 AI 관련 뉴스가 쏟아지는 현대 사회에서, 모든 기사를 직접 찾아 읽는 것은 많은 시간과 노력이 소요됩니다. 
+- **정보 과잉**: 어떤 뉴스가 중요한지 판단하기 어렵습니다.
+- **언어 장벽**: 주요 소식이 해외 매체에서 먼저 나올 경우 접근성이 떨어집니다. (본 프로젝트는 국내 주요 AI 매체를 우선적으로 다룹니다.)
+- **시간 소모**: 매번 사이트를 방문하여 업데이트를 확인해야 하는 번거로움이 있습니다.
 
-### Frontend
-- **React**: 사용자 인터페이스 구축
-- **Vite**: 초고속 프런트엔드 빌드 도구
-- **Vanilla CSS**: 세련된 글래스모피즘(Glassmorphism) 디자인
+**해결책**: 2시간 간격으로 주요 언론사의 AI 기사를 크롤링하고, 강력한 Gemini AI를 사용하여 핵심 요약을 생성함으로써 사용자가 단 몇 초 만에 최신 트렌드를 파악할 수 있도록 돕습니다.
 
-## 시작하기
+## 2. 주요 기능 (Key Features)
 
-### 1. 환경 설정
-프로젝트 루트 폴더에 `.env` 파일을 생성하고 아래 내용을 입력합니다.
-```env
-GEMINI_API_KEY=your_gemini_api_key
+- **자동 크롤링**: 인공지능신문, AI타임즈 등 국내 주요 AI 전문 매체의 최신 기사를 2시간마다 수집합니다.
+- **AI 요약**: Google Gemini Flash 모델을 사용하여 기사 본문을 제목 + 3개 핵심 포인트로 자동 요약합니다.
+- **데이터 보존**: 자정 이후에도 이전 데이터가 삭제되지 않도록 보호하며, 당일 뉴스가 올라오기 전까지는 전날의 콘텐츠를 지속적으로 제공합니다.
+- **반응형 인터페이스**: 현대적이고 깔끔한 UI를 통해 모바일과 데스크톱 어디서든 편리하게 소식을 확인할 수 있습니다.
+
+## 3. 프로젝트 구조 (Project Structure)
+
+```text
+news_summarization/
+├── backend/                # 백엔드 핵심 로직 (Python Package)
+│   ├── crawler.py          # 뉴스 크롤러 로직
+│   ├── summarizer.py       # Gemini API 활용 요약 엔진
+│   ├── database.py         # SQLite DB 인터페이스
+│   ├── tasks.py            # 백그라운드 스케줄러 및 작업
+│   ├── check_db.py         # DB 상태 확인 도구
+│   ├── __init__.py         # 패키지 초기화 파일
+│   └── news.db             # 로컬 SQLite 데이터베이스
+├── frontend/               # 프론트엔드 (React + Vite)
+│   ├── src/                # 소스 코드
+│   ├── index.html          # HTML 엔트리
+│   ├── vite.config.js      # Vite 설정
+│   └── package.json        # 프론트엔드 의존성
+├── main.py                 # 서비스 통합 및 API 진입점 (Root)
+├── requirements.txt        # 전체 백엔드 의존성 (Root)
+├── Dockerfile              # 컨테이너화 설정
+├── render.yaml             # Render.com 배포 설정
+└── README.md               # 프로젝트 문서 (현재 파일)
 ```
 
-### 2. 로컬 실행
-**백엔드 실행 (API 및 스케줄러)**
+## 4. 시작하기 (Getting Started)
+
+### 사전 준비
+- Python 3.10+
+- Node.js 20+
+- Google Gemini API Key
+
+### 환경 설정
+`.env` 파일을 root 폴더에 생성하세요.
+```env
+GEMINI_API_KEY=your_api_key_here
+```
+
+### 서버 실행 (Backend)
 ```bash
 pip install -r requirements.txt
 python main.py
 ```
 
-**프론트엔드 실행**
+### 클라이언트 실행 (Frontend)
 ```bash
+cd frontend
 npm install
-npm run dev:client
+npm run dev
 ```
 
-## 배포 (Deployment)
-본 프로젝트는 **Render**와 **Docker**를 통한 자동 배포에 최적화되어 있습니다.
-- `Dockerfile`: 멀티 스테이지 빌드를 지원합니다.
-- `render.yaml`: Render Blueprint를 지원합니다.
+## 5. 배포 (Deployment)
+
+본 프로젝트는 Docker를 통해 간편하게 배포할 수 있습니다.
+### Docker Compose (추천)
+Docker Compose를 사용하면 환경 변수와 볼륨 설정이 자동으로 적용되어 더 간편합니다.
+```bash
+# 실행
+docker-compose up -d
+
+# 중지
+docker-compose down
+```
+
+### Docker CLI
+```bash
+docker build -t ai-news-summarizer .
+docker run -p 8000:8000 -e GEMINI_API_KEY=your_api_key ai-news-summarizer
+```
+
+## 6. 라이선스
+ISC License

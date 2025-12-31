@@ -9,3 +9,7 @@ services:
       - key: PYTHONUNBUFFERED
         value: "true"
     healthCheckPath: /api/news
+    disk:
+      name: news-db
+      mountPath: /app/backend/data
+      sizeGB: 1
