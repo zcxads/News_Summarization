@@ -13,8 +13,8 @@ services:
           name: news-db
           property: connectionString
     healthCheckPath: /health
-  
-  - type: pserv
-    name: news-db
-    region: oregon
-    plan: free
+
+databases:
+  - name: news-db
+    databaseName: news_summarization
+    user: news_user
