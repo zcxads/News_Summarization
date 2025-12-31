@@ -27,9 +27,6 @@ COPY --from=build-stage /app/frontend/dist ./frontend/dist
 COPY backend/ ./backend/
 COPY main.py .
 
-# Ensure data directory exists for SQLite
-RUN mkdir -p backend/data
-
 # Expose port
 EXPOSE 8000
 

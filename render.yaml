@@ -9,3 +9,10 @@ services:
       - key: PYTHONUNBUFFERED
         value: "true"
     healthCheckPath: /health
+  
+  - type: pserv
+    name: news-db
+    region: oregon
+    plan: free
+    databaseName: news_summarization
+    databaseUser: news_user

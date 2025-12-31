@@ -7,3 +7,4 @@ python-dotenv
 apscheduler
 gunicorn
 prettytable
+psycopg2-binary
